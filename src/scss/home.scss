@@ -1,0 +1,57 @@
+.categorias,
+.exercicios {
+    width: 100%;
+    padding: 20px 40px;
+    
+    @media screen and (max-width:640px){
+        padding: 20px;
+    }
+
+    @media screen and (max-width:420px){
+        padding: 20px 0;
+    }
+}
+
+.categorias {
+    .background{
+        width: 100%;
+        height: 220px;
+        background-color: #FF9500;
+    }
+}
+
+.swiper-horizontal {
+    max-width: 100%;
+    padding-bottom: 30px !important;
+
+    .swiper-slide {
+        img {
+            object-fit: cover;
+            width: 100%;
+            height: 220px;
+        }
+
+        h4{
+            position: absolute;
+            bottom: 5px;
+            left: 10px;
+            color: #FFF;
+            font-weight: 600;
+        }
+
+        .icon {
+            position: absolute;
+            top: 50%;      /* Centraliza verticalmente */
+            left: 50%;     /* Centraliza horizontalmente */
+            transform: translate(-50%, -50%);  /* Ajusta para compensar a largura e altura do ícone */
+            width: 60px;
+            height: 60px;
+            color: #FFF;
+            font-weight: 600;
+        }
+    }
+
+    .swiper-pagination {
+        z-index: 10;
+    }
+}
