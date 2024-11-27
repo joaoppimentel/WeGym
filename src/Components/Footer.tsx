@@ -80,11 +80,12 @@ interface QrCodeSheetProps {
     onClose: () => void;
 }
 
-
 const QrCodeSheet: React.FC<QrCodeSheetProps> = ({ isOpen, onClose }) => {
     const [hasPermission, setHasPermission] = useState<null | boolean>(null);
+    const [isMusicPlaying, setIsMusicPlaying] = useState(false);
 
     const videoRef = useRef<HTMLVideoElement>(null);
+    const audioRef = useRef<HTMLAudioElement>(null);
 
     useEffect(() => {
         const getCamera = async () => {
@@ -95,12 +96,14 @@ const QrCodeSheet: React.FC<QrCodeSheetProps> = ({ isOpen, onClose }) => {
                 if (videoRef.current) {
                     videoRef.current.srcObject = stream;
                 }
+
                 // Após permissão, verificar dispositivos disponíveis
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 const hasCamera = devices.some(device => device.kind === "videoinput");
 
                 if (hasCamera) {
                     setHasPermission(true);
+                    setIsMusicPlaying(true);  // Inicia a música assim que a permissão for concedida
                 } else {
                     setHasPermission(false);
                 }
@@ -110,6 +113,7 @@ const QrCodeSheet: React.FC<QrCodeSheetProps> = ({ isOpen, onClose }) => {
         };
 
         getCamera();
+
         // Limpa o stream quando o componente é desmontado
         return () => {
             if (videoRef.current && videoRef.current.srcObject) {
@@ -120,21 +124,28 @@ const QrCodeSheet: React.FC<QrCodeSheetProps> = ({ isOpen, onClose }) => {
         };
     }, []);
 
+    // Controla a reprodução da música
+    useEffect(() => {
+        if (isMusicPlaying && audioRef.current) {
+            audioRef.current.play();
+        } else if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;  // Reseta o áudio
+        }
+    }, [isMusicPlaying]);
 
     return (
         <Sheet isOpen={isOpen} onClose={onClose} detent="content-height">
             <Sheet.Container>
                 <Sheet.Header />
                 <Sheet.Content>
-                    {hasPermission === null ? ((
+                    {hasPermission === null ? (
                         <div className="qr-code-content">
                             <img className="mb-5" src={PermissionQR} width={300} height={300} />
                             <p className="mt-5">
-                                O Aplicativo requer acesso a câmera
-                                para poder ler o QRCode
+                                O Aplicativo requer acesso a câmera para poder ler o QRCode
                             </p>
                         </div>
-                    )
                     ) : hasPermission ? (
                         <div className="qr-code-content">
                             <p className="text-success">
@@ -163,10 +174,7 @@ const QrCodeSheet: React.FC<QrCodeSheetProps> = ({ isOpen, onClose }) => {
                             <p className="mt-5 text-danger">
                                 O aplicativo requer acesso à câmera para funcionar. Verifique as configurações de permissão do dispositivo.
                             </p>
-                            <Button
-                                variant="outline-dark"
-                                onClick={onClose}
-                            >
+                            <Button variant="outline-dark" onClick={onClose}>
                                 Fechar
                             </Button>
                         </div>
@@ -174,6 +182,12 @@ const QrCodeSheet: React.FC<QrCodeSheetProps> = ({ isOpen, onClose }) => {
                 </Sheet.Content>
             </Sheet.Container>
             <Sheet.Backdrop />
+
+            {/* Música de fundo */}
+            <audio ref={audioRef} loop>
+                <source src="/path-to-your-audio-file.mp3" type="audio/mp3" />
+                Seu navegador não suporta o formato de áudio.
+            </audio>
         </Sheet>
     );
 };
