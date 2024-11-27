@@ -1,0 +1,28 @@
+main.exercicios{
+    padding: 50px 24px;
+    padding-bottom: 60px;
+    gap: 5px;
+    align-items: baseline;
+
+    .exercise-video,
+    img{
+        width: 640px;
+        aspect-ratio: 16 / 9;
+        max-width: 100%;
+        object-fit: contain;
+        align-self: center;
+        margin-bottom: 20px;
+        iframe{
+            border-radius: 10px;
+            pointer-events: none;
+            width: 100%;
+            height: 100%;
+        }
+    }
+
+    img{
+        width: 460px;
+        object-fit: cover;
+        border-radius: 10px;
+    }
+}

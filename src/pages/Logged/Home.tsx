@@ -6,6 +6,7 @@ import 'swiper/css';
 import 'swiper/css/pagination';
 import { categorias, exercicios } from '../../tests.ts'
 import { Pagination } from 'swiper/modules';
+import { Link } from 'react-router-dom';
 
 const Home: React.FC = () => {
 
@@ -22,13 +23,10 @@ const Home: React.FC = () => {
                     spaceBetween={20}
                     pagination={{ clickable: true }}
                     breakpoints={{
-                        640: {
-                            slidesPerView: 1,
-                        },
-                        768: {
+                        620: {
                             slidesPerView: 2,
                         },
-                        1000: {
+                        890: {
                             slidesPerView: 3,
                         }
                     }}
@@ -36,8 +34,10 @@ const Home: React.FC = () => {
                 >
                     {exercicios.map((exercicio) => (
                         <SwiperSlide>
-                            <Image className="mt-5 rounded-3" src={exercicio.img} />
-                            <h4>{exercicio.nome}</h4>
+                            <Link to={`/exercicio/${exercicio.id}`}>
+                                <Image className="mt-5 rounded-3" src={exercicio.img} />
+                                <h4>{exercicio.nome}</h4>
+                            </Link>
                         </SwiperSlide>
                     ))}
 
@@ -50,13 +50,10 @@ const Home: React.FC = () => {
                     spaceBetween={20}
                     pagination={{ clickable: true }}
                     breakpoints={{
-                        640: {
-                            slidesPerView: 1,
-                        },
-                        768: {
+                        620: {
                             slidesPerView: 2,
                         },
-                        1000: {
+                        890: {
                             slidesPerView: 3,
                         }
                     }}
@@ -66,7 +63,7 @@ const Home: React.FC = () => {
                         <SwiperSlide>
                             <div className="background rounded-3"></div>
                             <h4>{categoria.nome}</h4>
-                            <categoria.icon className='icon'/>
+                            <categoria.icon className='icon' />
                         </SwiperSlide>
                     ))}
 

@@ -7,12 +7,13 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import Verify from './pages/notLogged/Verify';
 import Home from './pages/Logged/Home';
 import Footer from './Components/Footer';
+import Exercicio from './pages/Logged/Exercicio';
 
 const App: React.FC = () => {
   const isLogged = localStorage.getItem("isLogged") == "logado";
   return (
     <Router>
-      <div className="container">
+      <div className="container-wegym">
         {!isLogged ?
           <Routes>
             <Route path="/" element={<Login />} />
@@ -22,6 +23,7 @@ const App: React.FC = () => {
           <>
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route path="/exercicio/:id" element={<Exercicio />} />
             </Routes>
             <Footer/>
           </>

@@ -1,6 +1,8 @@
 .footer {
+    position: absolute;
     display: flex;
-    position: relative;
+    width: 100%;
+    bottom: 2px;
     justify-content: space-between;
     align-items: center;
     padding: 20px;
@@ -40,5 +42,34 @@
             height: 100%;
         }
     }
+}
 
+.react-modal-sheet-container {
+    max-width: 1024px;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+
+    .react-modal-sheet-content {
+        align-items: center;
+        .logout {
+            padding: 20px;
+            padding-top: 0;
+            width: 100%;
+            max-width: 640px;
+            gap: 8px;
+            display: flex;
+            flex-direction: column;
+
+            h4{
+                font-weight: 600;
+            }
+
+            button{
+                border: 2px #E2E8F0 solid;
+                padding: 10px;
+                font-weight: 600;
+                font-size: 18px;
+            }
+        }
+    }
 }
