@@ -1,45 +1,68 @@
 import { FiUser, FiHome } from "react-icons/fi";
 import { RiQrCodeFill } from "react-icons/ri";
-import '../scss/footer.scss';
+import "../scss/footer.scss";
 import { Link, useNavigate } from "react-router-dom";
 import { Sheet } from "react-modal-sheet";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "react-bootstrap";
+
+import PermissionQR from '../img/PermissionQR.png';
 
 const Footer: React.FC = () => {
     const navigate = useNavigate();
 
-    const [isOpen, setOpen] = useState(false);
+    const [isQrOpen, setQrOpen] = useState(false);
+    const [isLogoutOpen, setLogoutOpen] = useState(false);
 
     const handleLogOut = () => {
         localStorage.removeItem("isLogged");
         navigate("/");
         navigate(0);
-    }
+    };
+
     return (
         <>
-            <footer className="footer">
+            <footer>
                 <Link to="/">
                     <FiHome />
                     <span>Menu</span>
                 </Link>
-                <button className="qr-code">
+                <button className="qr-code" onClick={() => setQrOpen(true)}>
                     <RiQrCodeFill />
                 </button>
-                <button onClick={() => setOpen(true)}>
+
+                <QrCodeSheet isOpen={isQrOpen} onClose={() => setQrOpen(false)} />
+
+                <button onClick={() => setLogoutOpen(true)}>
                     <FiUser />
                     <span>Account</span>
                 </button>
 
-                <Sheet isOpen={isOpen} onClose={() => setOpen(false)} detent="content-height">
+                <Sheet
+                    isOpen={isLogoutOpen}
+                    onClose={() => setLogoutOpen(false)}
+                    detent="content-height"
+                >
                     <Sheet.Container>
                         <Sheet.Header />
                         <Sheet.Content>
                             <div className="logout">
                                 <h4>Fazer Logout?</h4>
-                                <p className="text-muted">Você está prester a finalizar sua sessão</p>
-                                <Button variant="outline-light text-danger" onClick={handleLogOut}>Logout</Button>
-                                <Button variant="outline-light text-dark" onClick={() => setOpen(false)}>Cancelar</Button>
+                                <p className="text-muted">
+                                    Você está prestes a finalizar sua sessão
+                                </p>
+                                <Button
+                                    variant="outline-light text-danger"
+                                    onClick={handleLogOut}
+                                >
+                                    Logout
+                                </Button>
+                                <Button
+                                    variant="outline-light text-dark"
+                                    onClick={() => setLogoutOpen(false)}
+                                >
+                                    Cancelar
+                                </Button>
                             </div>
                         </Sheet.Content>
                     </Sheet.Container>
@@ -51,3 +74,106 @@ const Footer: React.FC = () => {
 };
 
 export default Footer;
+
+interface QrCodeSheetProps {
+    isOpen: boolean;
+    onClose: () => void;
+}
+
+
+const QrCodeSheet: React.FC<QrCodeSheetProps> = ({ isOpen, onClose }) => {
+    const [hasPermission, setHasPermission] = useState<null | boolean>(null);
+
+    const videoRef = useRef<HTMLVideoElement>(null);
+
+    useEffect(() => {
+        const getCamera = async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+
+                // Se o vídeo for carregado, vincula o stream à tag <video>
+                if (videoRef.current) {
+                    videoRef.current.srcObject = stream;
+                }
+                // Após permissão, verificar dispositivos disponíveis
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const hasCamera = devices.some(device => device.kind === "videoinput");
+
+                if (hasCamera) {
+                    setHasPermission(true);
+                } else {
+                    setHasPermission(false);
+                }
+            } catch {
+                setHasPermission(false);
+            }
+        };
+
+        getCamera();
+        // Limpa o stream quando o componente é desmontado
+        return () => {
+            if (videoRef.current && videoRef.current.srcObject) {
+                const stream = videoRef.current.srcObject as MediaStream;
+                const tracks = stream.getTracks();
+                tracks.forEach(track => track.stop()); // Para as faixas de vídeo
+            }
+        };
+    }, []);
+
+
+    return (
+        <Sheet isOpen={isOpen} onClose={onClose} detent="content-height">
+            <Sheet.Container>
+                <Sheet.Header />
+                <Sheet.Content>
+                    {hasPermission === null ? ((
+                        <div className="qr-code-content">
+                            <img className="mb-5" src={PermissionQR} width={300} height={300} />
+                            <p className="mt-5">
+                                O Aplicativo requer acesso a câmera
+                                para poder ler o QRCode
+                            </p>
+                        </div>
+                    )
+                    ) : hasPermission ? (
+                        <div className="qr-code-content">
+                            <p className="text-success">
+                                Permissão concedida. Escaneie o QR Code.
+                            </p>
+                            <video
+                                ref={videoRef}
+                                autoPlay
+                                playsInline
+                                width="100%" // A largura pode ser ajustada conforme necessário
+                                height="auto"
+                            />
+                            <Button className="qr-button" onClick={onClose}>
+                                Fechar
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="qr-code-content">
+                            <img
+                                className="mb-5"
+                                src={PermissionQR}
+                                width={300}
+                                height={300}
+                                alt="Permissão necessária"
+                            />
+                            <p className="mt-5 text-danger">
+                                O aplicativo requer acesso à câmera para funcionar. Verifique as configurações de permissão do dispositivo.
+                            </p>
+                            <Button
+                                variant="outline-dark"
+                                onClick={onClose}
+                            >
+                                Fechar
+                            </Button>
+                        </div>
+                    )}
+                </Sheet.Content>
+            </Sheet.Container>
+            <Sheet.Backdrop />
+        </Sheet>
+    );
+};

@@ -32,8 +32,8 @@ const Home: React.FC = () => {
                     }}
 
                 >
-                    {exercicios.map((exercicio) => (
-                        <SwiperSlide>
+                    {exercicios.map((exercicio, index) => (
+                        <SwiperSlide key={index}>
                             <Link to={`/exercicio/${exercicio.id}`}>
                                 <Image className="mt-5 rounded-3" src={exercicio.img} />
                                 <h4>{exercicio.nome}</h4>
@@ -59,11 +59,11 @@ const Home: React.FC = () => {
                     }}
 
                 >
-                    {categorias.map((categoria) => (
-                        <SwiperSlide>
+                    {categorias.map((categoria, index) => (
+                        <SwiperSlide key={index}>
                             <div className="background rounded-3"></div>
                             <h4>{categoria.nome}</h4>
-                            <categoria.icon className='icon' />
+                            <categoria.icon className="icon" />
                         </SwiperSlide>
                     ))}
 
