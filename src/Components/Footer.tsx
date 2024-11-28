@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "react-bootstrap";
 
 import PermissionQR from '../img/PermissionQR.png';
+import NoPermission from '../img/PermissionError.png';
 
 const Footer: React.FC = () => {
     const navigate = useNavigate();
@@ -82,57 +83,76 @@ interface QrCodeSheetProps {
 
 const QrCodeSheet: React.FC<QrCodeSheetProps> = ({ isOpen, onClose }) => {
     const [hasPermission, setHasPermission] = useState<null | boolean>(null);
-    const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+    const videoRef = useRef<HTMLVideoElement | null>(null);
+    const [errorMessage, setErrorMessage] = useState<string>('');
+    const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
 
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const audioRef = useRef<HTMLAudioElement>(null);
 
-    useEffect(() => {
-        const getCamera = async () => {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-
-                // Se o vídeo for carregado, vincula o stream à tag <video>
-                if (videoRef.current) {
-                    videoRef.current.srcObject = stream;
-                }
-
-                // Após permissão, verificar dispositivos disponíveis
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                const hasCamera = devices.some(device => device.kind === "videoinput");
-
-                if (hasCamera) {
-                    setHasPermission(true);
-                    setIsMusicPlaying(true);  // Inicia a música assim que a permissão for concedida
-                } else {
-                    setHasPermission(false);
-                }
-            } catch {
-                setHasPermission(false);
+    const checkCameraPermission = async () => {
+        try {
+            const permissionCamera = (await navigator.permissions.query({ name: "camera" })).state
+            switch (permissionCamera) {
+                case "granted":
+                    return true;
+                case "denied":
+                    setErrorMessage(
+                        `É necessária autorização para utilizar a câmera. 
+                            Verifique as configurações de seu navegador`
+                    );
+                    return false;
+                case "prompt":
+                    return null;
             }
-        };
-
-        getCamera();
-
-        // Limpa o stream quando o componente é desmontado
-        return () => {
-            if (videoRef.current && videoRef.current.srcObject) {
-                const stream = videoRef.current.srcObject as MediaStream;
-                const tracks = stream.getTracks();
-                tracks.forEach(track => track.stop()); // Para as faixas de vídeo
-            }
-        };
-    }, []);
-
-    // Controla a reprodução da música
-    useEffect(() => {
-        if (isMusicPlaying && audioRef.current) {
-            audioRef.current.play();
-        } else if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current.currentTime = 0;  // Reseta o áudio
+        } catch (err: any) {
+            console.error(err);
+            setErrorMessage(`Occorreu um erro ao utilizar a câmera ${err.message}`);
+            return false;
         }
-    }, [isMusicPlaying]);
+    };
+
+    const fetchPermission = async (ask: boolean = false) => {
+        if (ask)
+            try {
+                await navigator.mediaDevices.getUserMedia({ video: true });
+            } catch {
+                setHasPermission(false)
+            }
+        if (isOpen) {
+            const permission = await checkCameraPermission();
+            setHasPermission(permission);
+
+            if (permission) {
+                getVideo();
+            }
+        } else {
+            stopVideo();
+        }
+    };
+    useEffect(() => {
+
+        fetchPermission();
+    }, [isOpen]);
+
+    const getVideo = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            setMediaStream(stream);
+
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+                videoRef.current.play();
+            }
+        } catch (err: any) {
+            console.error(err);
+        }
+    };
+
+    const stopVideo = () => {
+        if (mediaStream) {
+            mediaStream.getTracks().forEach(track => track.stop());
+            setMediaStream(null);
+        }
+    };
 
     return (
         <Sheet isOpen={isOpen} onClose={onClose} detent="content-height">
@@ -145,49 +165,46 @@ const QrCodeSheet: React.FC<QrCodeSheetProps> = ({ isOpen, onClose }) => {
                             <p className="mt-5">
                                 O Aplicativo requer acesso a câmera para poder ler o QRCode
                             </p>
+                            <button className="qr-button btn text-light" onClick={async () => {
+                                fetchPermission(true)
+                            }}>
+                                Solicitar Permissão
+                            </button>
                         </div>
                     ) : hasPermission ? (
                         <div className="qr-code-content">
-                            <p className="text-success">
-                                Permissão concedida. Escaneie o QR Code.
+                            <h3>Escanear QR Code</h3>
+                            <p>
+                                Mantenha o QR Code dentro da área determinada
+                                para uma melhor leitura
                             </p>
                             <video
+                                key={isOpen ? 'open' : 'closed'}
                                 ref={videoRef}
-                                autoPlay
-                                playsInline
-                                width="100%" // A largura pode ser ajustada conforme necessário
-                                height="auto"
-                            />
-                            <Button className="qr-button" onClick={onClose}>
-                                Fechar
-                            </Button>
+                                width="100%"
+                                height="700">
+                            </video>
+                            <button className="qr-button btn">
+                                Ler QRCode
+                            </button>
                         </div>
                     ) : (
                         <div className="qr-code-content">
                             <img
-                                className="mb-5"
-                                src={PermissionQR}
+                                className="mb-5 p-3"
+                                src={NoPermission}
                                 width={300}
                                 height={300}
-                                alt="Permissão necessária"
                             />
                             <p className="mt-5 text-danger">
-                                O aplicativo requer acesso à câmera para funcionar. Verifique as configurações de permissão do dispositivo.
+                                {errorMessage}
                             </p>
-                            <Button variant="outline-dark" onClick={onClose}>
-                                Fechar
-                            </Button>
+                            <button className="qr-button btn" onClick={onClose}>Fechar</button>
                         </div>
                     )}
                 </Sheet.Content>
             </Sheet.Container>
             <Sheet.Backdrop />
-
-            {/* Música de fundo */}
-            <audio ref={audioRef} loop>
-                <source src="/path-to-your-audio-file.mp3" type="audio/mp3" />
-                Seu navegador não suporta o formato de áudio.
-            </audio>
         </Sheet>
     );
 };
