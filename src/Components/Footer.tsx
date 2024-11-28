@@ -91,7 +91,9 @@ const QrCodeSheet: React.FC<QrCodeSheetProps> = ({ isOpen, onClose }) => {
     const checkCameraPermission = async () => {
         try {
             // @ts-ignore
-            const permissionCamera = (await navigator.permissions.query({ name: "camera" as PermissionName })).state
+            const permissionCamera = (await navigator.permissions.query({ name: "video" })).state
+            console.log(permissionCamera);
+            return;
             switch (permissionCamera) {
                 case "granted":
                     return true;
