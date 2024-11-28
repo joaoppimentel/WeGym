@@ -90,6 +90,7 @@ const QrCodeSheet: React.FC<QrCodeSheetProps> = ({ isOpen, onClose }) => {
 
     const checkCameraPermission = async () => {
         try {
+            // @ts-ignore
             const permissionCamera = (await navigator.permissions.query({ name: "camera" as PermissionName })).state
             switch (permissionCamera) {
                 case "granted":
