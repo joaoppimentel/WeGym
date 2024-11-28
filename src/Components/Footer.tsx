@@ -1,5 +1,6 @@
 import { FiUser, FiHome } from "react-icons/fi";
 import { RiQrCodeFill } from "react-icons/ri";
+import { MdCameraswitch } from "react-icons/md";
 import "../scss/footer.scss";
 import { Link, useNavigate } from "react-router-dom";
 import { Sheet } from "react-modal-sheet";
@@ -86,6 +87,8 @@ const QrCodeSheet: React.FC<QrCodeSheetProps> = ({ isOpen, onClose }) => {
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const [errorMessage, setErrorMessage] = useState<string>('');
     const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+    const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
+    const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
 
 
     const checkCameraPermission = async () => {
@@ -129,14 +132,53 @@ const QrCodeSheet: React.FC<QrCodeSheetProps> = ({ isOpen, onClose }) => {
             stopVideo();
         }
     };
-    useEffect(() => {
 
-        fetchPermission();
-    }, [isOpen]);
+    const switchCamera = async () => {
+        if (!selectedDeviceId || videoDevices.length <= 1) return;
+
+        // Encontre o índice da câmera atual
+        const currentIndex = videoDevices.findIndex((device) => device.deviceId === selectedDeviceId);
+
+        // Encontre o próximo dispositivo para alternar
+        const nextIndex = (currentIndex + 1) % videoDevices.length; // Ciclamos para o primeiro dispositivo quando chegar ao fim
+        const nextDeviceId = videoDevices[nextIndex].deviceId;
+
+        // Parar o stream atual
+        if (mediaStream) {
+            mediaStream.getTracks().forEach(track => track.stop());
+        }
+
+        // Obter o novo stream de vídeo com a câmera selecionada
+        const newStream = await navigator.mediaDevices.getUserMedia({
+            video: { deviceId: nextDeviceId },
+        });
+
+        setSelectedDeviceId(nextDeviceId);  // Atualizar a câmera selecionada
+        setMediaStream(newStream);
+
+        if (videoRef.current) {
+            videoRef.current.srcObject = newStream;
+            videoRef.current.play();
+        }
+    };
+
+    useEffect(() => {
+        const fetchDevices = async () => {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(device => device.kind === 'videoinput');
+            setVideoDevices(videoDevices);
+            if (videoDevices.length > 0) {
+                setSelectedDeviceId(videoDevices[0].deviceId); // Seleciona a primeira câmera por padrão
+            }
+        };
+
+        fetchDevices();
+    }, []);
 
     const getVideo = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+
             setMediaStream(stream);
 
             if (videoRef.current) {
@@ -166,9 +208,7 @@ const QrCodeSheet: React.FC<QrCodeSheetProps> = ({ isOpen, onClose }) => {
                             <p className="mt-5">
                                 O Aplicativo requer acesso a câmera para poder ler o QRCode
                             </p>
-                            <button className="qr-button btn text-light" onClick={async () => {
-                                fetchPermission(true)
-                            }}>
+                            <button className="qr-button btn text-light" onClick={async () => fetchPermission(true)}>
                                 Solicitar Permissão
                             </button>
                         </div>
@@ -179,28 +219,30 @@ const QrCodeSheet: React.FC<QrCodeSheetProps> = ({ isOpen, onClose }) => {
                                 Mantenha o QR Code dentro da área determinada
                                 para uma melhor leitura
                             </p>
+                            {/* Botão para alternar as câmeras */}
+                            {videoDevices.length > 1 && (
+                                <button className="flip-cam" onClick={switchCamera}>
+                                    <MdCameraswitch size={30}/>
+                                </button>
+                            )}
                             <video
                                 key={isOpen ? 'open' : 'closed'}
                                 ref={videoRef}
                                 width="100%"
                                 height="700">
                             </video>
+
                             <button className="qr-button btn">
                                 Ler QRCode
                             </button>
                         </div>
                     ) : (
                         <div className="qr-code-content">
-                            <img
-                                className="mb-5 p-3"
-                                src={NoPermission}
-                                width={300}
-                                height={300}
-                            />
-                            <p className="mt-5 text-danger">
-                                {errorMessage}
-                            </p>
-                            <button className="qr-button btn" onClick={onClose}>Fechar</button>
+                            <img className="mb-5 p-3" src={NoPermission} width={300} height={300} />
+                            <p className="mt-5 text-danger">{errorMessage}</p>
+                            <button className="qr-button btn" onClick={onClose}>
+                                Fechar
+                            </button>
                         </div>
                     )}
                 </Sheet.Content>
